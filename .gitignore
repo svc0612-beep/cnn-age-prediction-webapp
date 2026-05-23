@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+
+# 원본/중간 데이터셋은 배포하지 않음
+UTKFace/
+crop_part1/
+utkface_aligned_cropped/
+data/
+
+# 웹앱은 best 모델만 사용
+models/final_cnn_age_model.keras
+
+# 개발 노트북/개인 메모
+image.ipynb
+프로젝트 알림장.txt
