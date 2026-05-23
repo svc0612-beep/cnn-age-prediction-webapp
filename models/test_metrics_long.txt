@@ -1,0 +1,4 @@
+best_epoch: 19
+best_val_mae: 6.7196
+test_loss: 76.6634
+test_mae: 6.6186

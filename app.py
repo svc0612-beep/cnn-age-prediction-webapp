@@ -17,6 +17,8 @@ FACE_MARGIN = 0.25
 MATERIALS_DIR = Path("presentation_materials")
 METADATA_PATH = Path("metadata_resized_128_filtered.csv")
 DEPLOY_SAMPLE_DIR = Path("deploy_samples")
+TRAINING_HISTORY_PATH = Path("models/training_history_long.csv")
+TEST_METRICS_PATH = Path("models/test_metrics_long.txt")
 
 # =========================
 # 모델 불러오기
@@ -142,6 +144,11 @@ def load_metadata():
     return pd.read_csv(METADATA_PATH)
 
 
+@st.cache_data
+def load_training_history():
+    return pd.read_csv(TRAINING_HISTORY_PATH)
+
+
 def render_visualization_page():
     st.markdown(
         """
@@ -167,6 +174,29 @@ def render_visualization_page():
     col2.metric("최소 나이", f"{int(df['age'].min())}세")
     col3.metric("최대 나이", f"{int(df['age'].max())}세")
     col4.metric("평균 나이", f"{df['age'].mean():.1f}세")
+
+    if TRAINING_HISTORY_PATH.exists():
+        history_df = load_training_history().dropna(how="all")
+        best_row = history_df.loc[history_df["val_mae"].idxmin()]
+
+        st.markdown("#### 모델 학습 결과")
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
+        metric_col1.metric("최적 epoch", int(best_row["epoch"]) + 1)
+        metric_col2.metric("검증 MAE", f"{best_row['val_mae']:.2f}세")
+
+        if TEST_METRICS_PATH.exists():
+            test_metrics = {}
+            for line in TEST_METRICS_PATH.read_text(encoding="utf-8").splitlines():
+                if ": " in line:
+                    key, value = line.split(": ", 1)
+                    test_metrics[key] = value
+            metric_col3.metric("Test MAE", f"{float(test_metrics.get('test_mae', 0)):.2f}세")
+        else:
+            metric_col3.metric("Test MAE", "약 6.62세")
+
+        chart_df = history_df.set_index(history_df["epoch"] + 1)[["mae", "val_mae"]]
+        chart_df.index.name = "epoch"
+        st.line_chart(chart_df)
 
     chart_col1, chart_col2 = st.columns(2)
 
@@ -821,7 +851,7 @@ with st.sidebar:
         </div>
         <div class="sidebar-box">
             <div class="sidebar-label">TEST MAE</div>
-            <div class="sidebar-value">약 9.78세</div>
+            <div class="sidebar-value">약 6.62세</div>
         </div>
         <div class="sidebar-box">
             <div class="sidebar-label">POLICY</div>
@@ -866,7 +896,7 @@ st.markdown(
         </div>
         <div class="model-tile">
             <div class="tile-label">Test MAE</div>
-            <div class="tile-value">약 9.78세</div>
+            <div class="tile-value">약 6.62세</div>
         </div>
     </div>
     """,
